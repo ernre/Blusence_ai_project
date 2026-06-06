@@ -22,3 +22,11 @@ mlruns/
 *.pth
 *.safetensors
 *.ckpt
+node_modules/
+.next/
+out/
+coverage/
+test-results/
+playwright-report/
+.env.local
+!.env.local.example
