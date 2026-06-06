@@ -29,7 +29,9 @@ def test_memory_worker_processes_job(tmp_path: Path) -> None:
     assert store.statuses[job_id]["status"] == "succeeded"
 
 
-def test_api_health_and_tryon(tmp_path: Path) -> None:
+def test_api_health_and_tryon(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("VPE_TRYON_PROVIDER", "local")
+    serving_api.provider_cache.clear()
     client = TestClient(app)
     person = _image(tmp_path / "person.png", "white")
     garment = _image(tmp_path / "garment.png", "red")
@@ -56,6 +58,21 @@ def test_api_health_and_tryon(tmp_path: Path) -> None:
 
     jobs = client.get("/v1/jobs").json()
     assert jobs["jobs"][0]["id"] == job_id
+
+
+def test_api_lists_tryon_providers(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("VPE_TRYON_PROVIDER", "idm-vton")
+
+    response = TestClient(app).get("/v1/providers")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["active_provider"] == "idm_vton"
+    provider_ids = {provider["id"] for provider in payload["providers"]}
+    assert {"local", "fashn", "idm_vton"}.issubset(provider_ids)
+    idm_provider = next(provider for provider in payload["providers"] if provider["id"] == "idm_vton")
+    assert idm_provider["active"] is True
+    assert idm_provider["role"] == "open-source-research"
 
 
 def test_catalog_endpoint_loads_real_manifest_images(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

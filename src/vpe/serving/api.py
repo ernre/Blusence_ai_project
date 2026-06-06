@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import csv
 from datetime import datetime, timezone
-import os
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
@@ -15,8 +14,12 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from pydantic import BaseModel
 
-from vpe.baseline import FashnBaselineVTON, FashnConfig
-from vpe.core import VPEngine
+from vpe.providers import (
+    TryOnProvider,
+    active_provider_id,
+    build_tryon_provider,
+    provider_descriptors,
+)
 from vpe.types import TryOnRequest, TryOnResult
 
 
@@ -58,6 +61,21 @@ class CatalogResponse(BaseModel):
     garments: list[CatalogGarment]
 
 
+class ProviderSummary(BaseModel):
+    id: str
+    label: str
+    role: str
+    status: str
+    requires: list[str]
+    notes: str
+    active: bool
+
+
+class ProvidersResponse(BaseModel):
+    active_provider: str
+    providers: list[ProviderSummary]
+
+
 app = FastAPI(title="VPE-1.0 Serving API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
@@ -79,14 +97,14 @@ catalog_images_root.mkdir(parents=True, exist_ok=True)
 app.mount("/artifacts", StaticFiles(directory=serving_root), name="artifacts")
 app.mount("/catalog-assets", StaticFiles(directory=catalog_images_root), name="catalog-assets")
 
-engine = VPEngine(output_dir=result_root, image_size=256)
+provider_cache: dict[str, TryOnProvider] = {}
 jobs: dict[str, JobStatus] = {}
 job_summaries: dict[str, JobSummary] = {}
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "engine": "VPE-1.0"}
+    return {"status": "ok", "engine": "VPE-1.0", "provider": active_provider_id()}
 
 
 @app.get("/healthz")
@@ -194,11 +212,39 @@ def list_catalog_garments(request: Request, category: str | None = None) -> Cata
     return CatalogResponse(garments=garments)
 
 
+@app.get("/v1/providers", response_model=ProvidersResponse)
+def list_tryon_providers() -> ProvidersResponse:
+    active = active_provider_id()
+    return ProvidersResponse(
+        active_provider=active,
+        providers=[
+            ProviderSummary(
+                id=descriptor.id,
+                label=descriptor.label,
+                role=descriptor.role,
+                status=descriptor.status,
+                requires=list(descriptor.requires),
+                notes=descriptor.notes,
+                active=descriptor.id == active,
+            )
+            for descriptor in provider_descriptors()
+        ],
+    )
+
+
 def _render_tryon(request: TryOnRequest) -> TryOnResult:
-    provider = os.getenv("VPE_TRYON_PROVIDER", "local").lower()
-    if provider == "fashn":
-        return FashnBaselineVTON(FashnConfig.from_env()).render(request)
-    return engine.render(request)
+    return _active_provider().render(request)
+
+
+def _active_provider() -> TryOnProvider:
+    provider_id = active_provider_id()
+    if provider_id not in provider_cache:
+        provider_cache[provider_id] = build_tryon_provider(
+            provider_id=provider_id,
+            output_dir=result_root,
+            image_size=256,
+        )
+    return provider_cache[provider_id]
 
 
 async def _persist_upload(upload: UploadFile, job_id: str, stem: str) -> Path:
