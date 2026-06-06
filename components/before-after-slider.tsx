@@ -17,7 +17,13 @@ export function BeforeAfterSlider({ beforeImage, afterImage, label }: BeforeAfte
   return (
     <div className="grid gap-3">
       <div className="relative aspect-[4/5] overflow-hidden rounded-lg border bg-secondary">
-        <Image src={beforeImage} alt={`${label} before`} fill className="object-cover" sizes="(max-width: 768px) 100vw, 720px" />
+        <Image
+          src={beforeImage}
+          alt={`${label} before`}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 720px"
+        />
         <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${position}%` }}>
           <Image src={afterImage} alt={`${label} after`} fill className="object-cover" sizes="(max-width: 768px) 100vw, 720px" />
         </div>

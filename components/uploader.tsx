@@ -107,7 +107,7 @@ export function Uploader({
       <div
         {...getRootProps()}
         className={cn(
-          "flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed bg-secondary/30 p-4 text-center transition",
+          "flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed bg-secondary/30 p-4 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           isDragActive && "border-primary bg-primary/10",
         )}
       >
