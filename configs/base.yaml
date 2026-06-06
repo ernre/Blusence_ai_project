@@ -1,0 +1,42 @@
+engine:
+  name: VPE-1.0
+  seed: 1337
+  device: cpu
+  dtype: fp32
+
+model:
+  provider: stub
+  checkpoint: null
+  image_size: 256
+  sampling_steps: 4
+  guidance_scale: 1.0
+
+garment_encoder:
+  backbone: stub
+  embedding_dim: 768
+  projection_dim: 768
+
+pose:
+  enabled: false
+  provider: stub
+
+multiview:
+  enabled: false
+  max_views: 4
+
+latency:
+  compile: false
+  quantization: none
+  tensorrt: false
+
+tracking:
+  provider: local
+  project: vpe-1
+
+data:
+  dataset_version: smoke-v0
+  root: tests/smoke_dataset
+
+serving:
+  queue_backend: memory
+  max_batch_size: 1

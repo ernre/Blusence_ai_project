@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vpe"
+version = "0.1.0"
+description = "VPE-1.0 VTON-Prime Engine production scaffold"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.111",
+  "httpx>=0.27",
+  "numpy>=1.26",
+  "omegaconf>=2.3",
+  "pillow>=10.3",
+  "pydantic>=2.7",
+  "python-multipart>=0.0.9",
+  "PyYAML>=6.0",
+  "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+ml = [
+  "accelerate>=0.31",
+  "diffusers>=0.29",
+  "peft>=0.11",
+  "torch>=2.3",
+  "torchvision>=0.18",
+  "transformers>=4.41",
+]
+dev = [
+  "black>=24.4",
+  "mypy>=1.10",
+  "pytest>=8.2",
+  "pytest-cov>=5.0",
+  "ruff>=0.5",
+]
+
+[project.scripts]
+vpe-eval = "vpe.eval.cli:main"
+vpe-train = "vpe.training.cli:main"
+vpe-benchmark = "vpe.latency.benchmark:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["vpe"]
+strict = true
+ignore_missing_imports = true
