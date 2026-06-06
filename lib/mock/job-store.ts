@@ -60,7 +60,7 @@ export async function mockCreateJob(input: CreateTryOnJobInput): Promise<CreateT
   window.setTimeout(() => {
     const job = jobs.get(id);
     if (job) {
-      jobs.set(id, { ...job, status: "done", latencyMs: 2400 + input.steps * 120 });
+      jobs.set(id, { ...job, status: "done", latencyMs: 2400 + (input.steps ?? 6) * 120 });
     }
   }, 2600);
   return { jobId: id };

@@ -1,3 +1,5 @@
+import { TryOnStudio } from "@/components/tryon-studio";
+
 export default function StudioPage() {
   return (
     <section className="grid gap-4">
@@ -7,9 +9,7 @@ export default function StudioPage() {
           Upload a person photo and garment image, then run a mock or live VPE try-on job.
         </p>
       </div>
-      <div className="rounded-lg border bg-card p-6 text-card-foreground">
-        Frontend scaffold ready. Studio controls arrive in F2.
-      </div>
+      <TryOnStudio />
     </section>
   );
 }
