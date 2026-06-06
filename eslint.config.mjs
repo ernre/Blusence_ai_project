@@ -1,4 +1,9 @@
-import next from "eslint-config-next";
-import prettier from "eslint-config-prettier";
+import { FlatCompat } from "@eslint/eslintrc";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export default [...next, prettier];
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
+const compat = new FlatCompat({ baseDirectory: dirname });
+
+export default [...compat.extends("next/core-web-vitals", "prettier")];

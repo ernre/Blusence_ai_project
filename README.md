@@ -9,7 +9,7 @@ diffusion, pose, PEFT, and TensorRT paths are isolated behind explicit seams and
 optional dependencies so the repository can test end-to-end without committing
 proprietary weights.
 
-## Quick Start
+## Python Engine Quick Start
 
 ```powershell
 python -m venv .venv
@@ -69,3 +69,37 @@ uvicorn vpe.serving.api:app --app-dir src --host 0.0.0.0 --port 8000
 - The Fashn.ai adapter is benchmark-only. See `LICENSING_NOTES.md`.
 - Real SDXL/Diffusers, DensePose/DWPose, PEFT, and TensorRT integrations should
   implement the interfaces already present in `src/vpe/core`.
+
+## Frontend App
+
+VPE-1.0 also includes a frontend-only Next.js App Router web app for the try-on
+experience. It can run fully in mock mode without the Python API.
+
+```powershell
+pnpm install
+Copy-Item .env.local.example .env.local
+pnpm dev
+```
+
+Environment variables:
+
+- `NEXT_PUBLIC_USE_MOCK=true`: use the built-in mock job lifecycle.
+- `NEXT_PUBLIC_USE_MOCK=false`: call a live backend.
+- `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`: backend base URL for live mode.
+
+Frontend verification commands:
+
+```powershell
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm e2e
+pnpm build
+```
+
+Frontend Docker build:
+
+```powershell
+docker build -f Dockerfile.frontend -t vpe-frontend .
+docker run --rm -p 3000:3000 -e NEXT_PUBLIC_USE_MOCK=true vpe-frontend
+```
