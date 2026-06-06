@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Providers } from "@/components/providers";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,9 +32,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </nav>
           </div>
         </header>
-        <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl px-4 py-6 sm:px-6">
-          {children}
-        </main>
+        <Providers>
+          <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl px-4 py-6 sm:px-6">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

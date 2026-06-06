@@ -1,0 +1,55 @@
+import { z } from "zod";
+
+const fileSchema =
+  typeof File === "undefined"
+    ? z.custom<File>((value) => value instanceof Blob, "Expected an image file")
+    : z.instanceof(File);
+
+export const jobStatusSchema = z.enum(["queued", "running", "done", "error"]);
+
+export const garmentCategorySchema = z.enum([
+  "tops",
+  "bottoms",
+  "outerwear",
+  "dress",
+  "shoes",
+  "accessory",
+]);
+
+export const createTryOnJobResponseSchema = z.object({
+  job_id: z.string().min(1),
+});
+
+export const tryOnJobResultSchema = z.object({
+  status: jobStatusSchema,
+  images: z.array(z.string().min(1)).optional(),
+  source_images: z.array(z.string().min(1)).optional(),
+  latency_ms: z.number().int().nonnegative().optional(),
+  error: z.string().optional(),
+});
+
+export const jobsResponseSchema = z.object({
+  jobs: z.array(
+    z.object({
+      id: z.string().min(1),
+      status: jobStatusSchema,
+      thumbnail_url: z.string().min(1),
+      latency_ms: z.number().int().nonnegative().nullable(),
+      created_at: z.string().min(1),
+    }),
+  ),
+});
+
+export const healthResponseSchema = z.object({
+  ok: z.boolean(),
+});
+
+export const tryOnFormSchema = z.object({
+  person: z.array(fileSchema).min(1).max(4),
+  garment: fileSchema,
+  category: garmentCategorySchema,
+  brandId: z.string().trim().optional(),
+  steps: z.number().int().min(4).max(8).optional(),
+});
+
+export type TryOnFormValues = z.infer<typeof tryOnFormSchema>;
