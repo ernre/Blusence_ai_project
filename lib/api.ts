@@ -1,4 +1,5 @@
 import {
+  catalogResponseSchema,
   createTryOnJobResponseSchema,
   healthResponseSchema,
   jobsResponseSchema,
@@ -6,6 +7,7 @@ import {
 } from "@/lib/schemas";
 import type {
   ApiConfig,
+  CatalogResponse,
   CreateTryOnJobInput,
   CreateTryOnJobResponse,
   HealthResponse,
@@ -62,6 +64,30 @@ function toJobsResponse(payload: {
       thumbnailUrl: job.thumbnail_url,
       latencyMs: job.latency_ms,
       createdAt: job.created_at,
+    })),
+  };
+}
+
+function toCatalogResponse(payload: {
+  garments: {
+    id: string;
+    name: string;
+    brand: string | null;
+    category: CatalogResponse["garments"][number]["category"];
+    image_url: string;
+    source_url: string | null;
+    license: string | null;
+  }[];
+}): CatalogResponse {
+  return {
+    garments: payload.garments.map((garment) => ({
+      id: garment.id,
+      name: garment.name,
+      brand: garment.brand,
+      category: garment.category,
+      imageUrl: garment.image_url,
+      sourceUrl: garment.source_url,
+      license: garment.license,
     })),
   };
 }
@@ -123,4 +149,14 @@ export async function getHealth(): Promise<HealthResponse> {
   const response = await fetch(`${normalizeBaseUrl(apiConfig.baseUrl)}/healthz`);
   await assertOk(response);
   return healthResponseSchema.parse(await response.json());
+}
+
+export async function getCatalogGarments(): Promise<CatalogResponse> {
+  if (apiConfig.mode === "mock") {
+    return { garments: [] };
+  }
+  const response = await fetch(`${normalizeBaseUrl(apiConfig.baseUrl)}/v1/catalog/garments`);
+  await assertOk(response);
+  const payload = catalogResponseSchema.parse(await response.json());
+  return toCatalogResponse(payload);
 }

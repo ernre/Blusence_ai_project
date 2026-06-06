@@ -123,3 +123,22 @@ Frontend Docker build:
 docker build -f Dockerfile.frontend -t vpe-frontend .
 docker run --rm -p 3000:3000 -e NEXT_PUBLIC_USE_MOCK=true vpe-frontend
 ```
+
+## Real Garment Catalog
+
+The app no longer ships fake sample garments. To show real catalog images:
+
+1. Add product photos you own or have permission to use under `data/catalog/images`.
+2. Add rows to `data/catalog/garments.csv`.
+3. Run the backend and open the Studio. The catalog grid reads `GET /v1/catalog/garments`.
+
+CSV format:
+
+```csv
+id,name,brand,category,image_path,image_url,source_url,license
+blue-jacket,Blue Jacket,Acme,outerwear,images/blue-jacket.jpg,,https://example.com/products/blue-jacket,owned
+```
+
+Use `image_path` for local catalog files or `image_url` for public product images.
+The local preview provider still produces a placeholder try-on; real generation
+requires `VPE_TRYON_PROVIDER=fashn` plus a valid `FASHN_API_KEY`.

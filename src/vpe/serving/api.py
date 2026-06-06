@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from datetime import datetime, timezone
 import os
 from pathlib import Path
@@ -43,6 +44,20 @@ class JobsResponse(BaseModel):
     jobs: list[JobSummary]
 
 
+class CatalogGarment(BaseModel):
+    id: str
+    name: str
+    brand: str | None = None
+    category: str
+    image_url: str
+    source_url: str | None = None
+    license: str | None = None
+
+
+class CatalogResponse(BaseModel):
+    garments: list[CatalogGarment]
+
+
 app = FastAPI(title="VPE-1.0 Serving API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
@@ -55,9 +70,14 @@ app.add_middleware(
 serving_root = Path("outputs/serving")
 upload_root = serving_root / "uploads"
 result_root = serving_root / "results"
+catalog_root = Path("data/catalog")
+catalog_images_root = catalog_root / "images"
+catalog_manifest = catalog_root / "garments.csv"
 upload_root.mkdir(parents=True, exist_ok=True)
 result_root.mkdir(parents=True, exist_ok=True)
+catalog_images_root.mkdir(parents=True, exist_ok=True)
 app.mount("/artifacts", StaticFiles(directory=serving_root), name="artifacts")
+app.mount("/catalog-assets", StaticFiles(directory=catalog_images_root), name="catalog-assets")
 
 engine = VPEngine(output_dir=result_root, image_size=256)
 jobs: dict[str, JobStatus] = {}
@@ -166,6 +186,14 @@ def list_jobs() -> JobsResponse:
     return JobsResponse(jobs=sorted_jobs)
 
 
+@app.get("/v1/catalog/garments", response_model=CatalogResponse)
+def list_catalog_garments(request: Request, category: str | None = None) -> CatalogResponse:
+    garments = _load_catalog(request)
+    if category:
+        garments = [garment for garment in garments if garment.category == category]
+    return CatalogResponse(garments=garments)
+
+
 def _render_tryon(request: TryOnRequest) -> TryOnResult:
     provider = os.getenv("VPE_TRYON_PROVIDER", "local").lower()
     if provider == "fashn":
@@ -195,3 +223,47 @@ def _create_full_mask(person_image: Path, job_id: str) -> Path:
 def _artifact_url(request: Request, path: Path) -> str:
     relative = path.relative_to(serving_root).as_posix()
     return str(request.base_url).rstrip("/") + f"/artifacts/{relative}"
+
+
+def _load_catalog(request: Request) -> list[CatalogGarment]:
+    if not catalog_manifest.exists():
+        return []
+    garments: list[CatalogGarment] = []
+    with catalog_manifest.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            garment = _catalog_row_to_garment(request, row)
+            if garment is not None:
+                garments.append(garment)
+    return garments
+
+
+def _catalog_row_to_garment(request: Request, row: dict[str, str]) -> CatalogGarment | None:
+    garment_id = row.get("id", "").strip()
+    name = row.get("name", "").strip()
+    category = row.get("category", "").strip()
+    image_path = row.get("image_path", "").strip()
+    image_url = row.get("image_url", "").strip()
+    if not garment_id or not name or not category:
+        return None
+    resolved_image_url = image_url
+    if image_path:
+        local_path = (catalog_root / image_path).resolve()
+        try:
+            local_path.relative_to(catalog_images_root.resolve())
+        except ValueError:
+            return None
+        if not local_path.exists():
+            return None
+        relative = local_path.relative_to(catalog_images_root.resolve()).as_posix()
+        resolved_image_url = str(request.base_url).rstrip("/") + f"/catalog-assets/{relative}"
+    if not resolved_image_url:
+        return None
+    return CatalogGarment(
+        id=garment_id,
+        name=name,
+        brand=row.get("brand", "").strip() or None,
+        category=category,
+        image_url=resolved_image_url,
+        source_url=row.get("source_url", "").strip() or None,
+        license=row.get("license", "").strip() or None,
+    )

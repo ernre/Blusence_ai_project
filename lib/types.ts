@@ -38,6 +38,20 @@ export type HealthResponse = {
   ok: boolean;
 };
 
+export type CatalogGarment = {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: GarmentCategory;
+  imageUrl: string;
+  sourceUrl: string | null;
+  license: string | null;
+};
+
+export type CatalogResponse = {
+  garments: CatalogGarment[];
+};
+
 export type ApiMode = "mock" | "live";
 
 export type ApiConfig = {

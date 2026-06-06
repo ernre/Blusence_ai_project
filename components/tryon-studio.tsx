@@ -85,9 +85,13 @@ export function TryOnStudio() {
         <div className="rounded-lg border bg-card p-4">
           <GarmentPicker
             selectedId={pickedGarmentId}
-            onPick={(file, id) => {
-              setPickedGarmentId(id);
+            onPick={(file, garment) => {
+              setPickedGarmentId(garment.id);
               form.setValue("garment", file, { shouldValidate: true });
+              form.setValue("category", garment.category, { shouldValidate: true });
+              if (garment.brand) {
+                form.setValue("brandId", garment.brand, { shouldValidate: true });
+              }
             }}
           />
         </div>

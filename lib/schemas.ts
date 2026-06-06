@@ -44,6 +44,20 @@ export const healthResponseSchema = z.object({
   ok: z.boolean(),
 });
 
+export const catalogResponseSchema = z.object({
+  garments: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      brand: z.string().nullable(),
+      category: garmentCategorySchema,
+      image_url: z.string().min(1),
+      source_url: z.string().nullable(),
+      license: z.string().nullable(),
+    }),
+  ),
+});
+
 export const tryOnFormSchema = z.object({
   person: z.array(fileSchema).min(1).max(4),
   garment: fileSchema,
