@@ -9,6 +9,7 @@ from PIL import Image
 
 from vpe.core.attention import DecoupledCrossAttention
 from vpe.core.garment_encoder import GarmentEncoder
+from vpe.core.lora import BrandLoRALoader
 from vpe.core.multiview import CrossViewAttentionBlock
 from vpe.core.pose import PoseConditioner
 from vpe.types import TryOnRequest, TryOnResult
@@ -32,6 +33,7 @@ class VPEngine:
         attention: DecoupledCrossAttention | None = None,
         pose_conditioner: PoseConditioner | None = None,
         cross_view_block: CrossViewAttentionBlock | None = None,
+        lora_loader: BrandLoRALoader | None = None,
     ) -> None:
         self.output_dir = output_dir
         self.provider = provider
@@ -40,6 +42,7 @@ class VPEngine:
         self.attention = attention or DecoupledCrossAttention(scale=0.05)
         self.pose_conditioner = pose_conditioner or PoseConditioner(image_size=image_size)
         self.cross_view_block = cross_view_block or CrossViewAttentionBlock(image_size=image_size)
+        self.lora_loader = lora_loader
         if provider != "stub":
             raise NotImplementedError(
                 "Configure optional diffusers dependencies before using non-stub providers"
@@ -55,6 +58,7 @@ class VPEngine:
         garment = load_rgb(request.garment_image, self.image_size)
         mask = load_mask(request.mask_image, self.image_size)
         features = self.garment_encoder.encode(request.garment_image)
+        lora_adapter = self.lora_loader.resolve(request.brand_id) if self.lora_loader else None
         conditioned = self._condition_garment(
             garment,
             features.embedding,
@@ -73,6 +77,8 @@ class VPEngine:
                 "image_size": self.image_size,
                 "view_count": len(request.person_views) + 1,
                 "pose_conditioned": request.pose_image is not None,
+                "brand_id": request.brand_id or "",
+                "lora_rank": lora_adapter.rank if lora_adapter else 0,
             },
         )
 
