@@ -1,8 +1,13 @@
 # VPE-1.0: VTON-Prime Engine
 
-VPE-1.0 is a proprietary virtual try-on monorepo scaffold. It is designed around a
-latent-diffusion inpainting engine with baseline benchmarking, training, evaluation,
-latency optimization, and a queue-backed serving API.
+VPE-1.0 is a proprietary virtual try-on monorepo. It is organized around a
+latent-diffusion inpainting engine with baseline benchmarking, training,
+evaluation, latency optimization, and a queue-backed serving API.
+
+The current implementation is production-shaped and CPU-runnable: heavyweight
+diffusion, pose, PEFT, and TensorRT paths are isolated behind explicit seams and
+optional dependencies so the repository can test end-to-end without committing
+proprietary weights.
 
 ## Quick Start
 
@@ -12,6 +17,9 @@ python -m venv .venv
 pip install -e ".[dev]"
 pytest
 ```
+
+If your local `python` is older than 3.11, use a Python 3.11 interpreter for the
+editable install. The Docker images use Python 3.11.
 
 ## Packages
 
@@ -31,3 +39,33 @@ docker compose up --build
 
 The local compose stack includes API, Redis, Postgres, and MinIO placeholders.
 No proprietary model weights are committed.
+
+## Commands
+
+```powershell
+$env:PYTHONPATH="src"; python -m pytest
+$env:PYTHONPATH="src"; python -m vpe.training.cli --config configs/base.yaml
+$env:PYTHONPATH="src"; python -m vpe.latency.benchmark --person-image tests/smoke_dataset/person.png --garment-image tests/smoke_dataset/garment.png --mask-image tests/smoke_dataset/mask.png --image-size 8
+uvicorn vpe.serving.api:app --app-dir src --host 0.0.0.0 --port 8000
+```
+
+## Phase Deliverables
+
+- Phase 0: Monorepo scaffold, config, Docker, tests, and package READMEs.
+- Phase 1: Fashn.ai baseline adapter plus offline baseline stub.
+- Phase 2: Inference core with garment encoder and decoupled cross-attention seam.
+- Phase 3: Pose conditioning and multi-view consistency seams.
+- Phase 4: Dataset manifest, smoke training loop, losses, and checkpoint metadata.
+- Phase 5: Brand LoRA registry and inference-time metadata loading.
+- Phase 6: Latency plan validation, benchmark CLI, and TensorRT export stub.
+- Phase 7: Automatic metrics and human-eval CSV/JSON export.
+- Phase 8: FastAPI API, in-memory queue, worker, health, and metrics endpoints.
+- Phase 9: Architecture and runbook documentation.
+
+## Boundaries
+
+- No model weights, provider credentials, or generated production artifacts are
+  committed.
+- The Fashn.ai adapter is benchmark-only. See `LICENSING_NOTES.md`.
+- Real SDXL/Diffusers, DensePose/DWPose, PEFT, and TensorRT integrations should
+  implement the interfaces already present in `src/vpe/core`.
