@@ -1,13 +1,13 @@
 # VPE-1.0: VTON-Prime Engine
 
-VPE-1.0 is a proprietary virtual try-on monorepo. It is organized around a
-latent-diffusion inpainting engine with baseline benchmarking, training,
-evaluation, latency optimization, and a queue-backed serving API.
+VPE-1.0 is a provider-oriented virtual try-on monorepo. It keeps the product
+surface stable while different generation backends can be selected for local
+preview, external benchmarking, or self-hosted research.
 
 The current implementation is production-shaped and CPU-runnable: heavyweight
-diffusion, pose, PEFT, and TensorRT paths are isolated behind explicit seams and
-optional dependencies so the repository can test end-to-end without committing
-proprietary weights.
+diffusion, pose, PEFT, and TensorRT paths are isolated behind explicit providers
+and optional dependencies so the repository can test end-to-end without
+committing proprietary weights.
 
 ## Python Engine Quick Start
 
@@ -23,7 +23,8 @@ editable install. The Docker images use Python 3.11.
 
 ## Packages
 
-- `vpe.baseline`: Fashn.ai-compatible benchmark adapter.
+- `vpe.providers`: Product provider registry for local, FASHN.ai, and IDM-VTON paths.
+- `vpe.baseline`: Compatibility package for original benchmark adapter tests.
 - `vpe.core`: VTON inference core and model components.
 - `vpe.data`: Dataset ingest, cleaning, pose/mask extraction, and versioning.
 - `vpe.training`: Config-driven training entry points.
@@ -61,14 +62,36 @@ uvicorn vpe.serving.api:app --app-dir src --host 0.0.0.0 --port 8000
 - Phase 7: Automatic metrics and human-eval CSV/JSON export.
 - Phase 8: FastAPI API, in-memory queue, worker, health, and metrics endpoints.
 - Phase 9: Architecture and runbook documentation.
+- Phase 10: Provider registry for product preview, FASHN benchmark, and IDM-VTON research paths.
 
 ## Boundaries
 
 - No model weights, provider credentials, or generated production artifacts are
   committed.
-- The Fashn.ai adapter is benchmark-only. See `LICENSING_NOTES.md`.
+- FASHN.ai is an external benchmark provider, not proprietary model IP.
+- IDM-VTON is an open-source research provider path. Its upstream license is
+  CC BY-NC-SA 4.0, so keep it separate from commercial/proprietary claims unless
+  licensing is resolved. See `docs/IDM_VTON_PROVIDER.md`.
 - Real SDXL/Diffusers, DensePose/DWPose, PEFT, and TensorRT integrations should
   implement the interfaces already present in `src/vpe/core`.
+
+## Provider Strategy
+
+The backend selects the active try-on provider with `VPE_TRYON_PROVIDER`:
+
+```text
+local    product preview and smoke tests
+fashn    FASHN.ai external benchmark / launch accelerator
+idm_vton IDM-VTON open-source research baseline scaffold
+```
+
+Inspect the registry while the backend is running:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/v1/providers
+```
+
+The frontend Health page also displays the active provider.
 
 ## FASHN AI Integration
 
@@ -89,6 +112,16 @@ does not need to expose public image URLs.
 For broader item support such as shoes and accessories, set
 `FASHN_MODEL_NAME=tryon-max`; for low-latency clothing try-on, keep the default
 `tryon-v1.6`.
+
+## IDM-VTON Research Path
+
+IDM-VTON is registered as `VPE_TRYON_PROVIDER=idm_vton` so the project can grow
+toward a real self-hosted model engine without changing the frontend/backend
+contract. The current provider is a scaffold with explicit setup and licensing
+checks. Wire an external IDM-VTON runner after GPU, checkpoint, and license
+constraints are confirmed.
+
+See `docs/IDM_VTON_PROVIDER.md` for the implementation plan.
 
 ## Frontend App
 
@@ -140,5 +173,6 @@ blue-jacket,Blue Jacket,Acme,outerwear,images/blue-jacket.jpg,,https://example.c
 ```
 
 Use `image_path` for local catalog files or `image_url` for public product images.
-The local preview provider still produces a placeholder try-on; real generation
-requires `VPE_TRYON_PROVIDER=fashn` plus a valid `FASHN_API_KEY`.
+The local preview provider still produces a placeholder try-on. Real generation
+requires either `VPE_TRYON_PROVIDER=fashn` plus a valid `FASHN_API_KEY`, or a
+future wired `VPE_TRYON_PROVIDER=idm_vton` runner with GPU/checkpoints.

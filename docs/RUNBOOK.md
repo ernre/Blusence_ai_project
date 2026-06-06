@@ -66,9 +66,21 @@ The compose stack starts API, worker placeholder, Redis, Postgres, and MinIO.
 
 ## Provider Setup
 
-Set `FASHN_API_KEY` in `.env` before using `FashnBaselineVTON`. Baseline outputs
-are for benchmarking only and must not be used for training unless service terms
-explicitly allow it.
+The serving API selects the active generation path with `VPE_TRYON_PROVIDER`.
+The supported values are `local`, `fashn`, and `idm_vton`.
+
+Inspect the provider registry:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/v1/providers
+```
+
+`local` is the default product preview. It keeps frontend/backend/catalog flows
+working without paid APIs or GPU checkpoints.
+
+Set `FASHN_API_KEY` in `.env` before using the FASHN benchmark provider. FASHN
+outputs are for benchmarking only and must not be used for training unless
+service terms explicitly allow it.
 
 To route frontend live try-on requests through FASHN instead of the local stub:
 
@@ -79,6 +91,20 @@ $env:FASHN_API_KEY="..."
 $env:FASHN_API_URL="https://api.fashn.ai"
 python -m uvicorn vpe.serving.api:app --host 127.0.0.1 --port 8000
 ```
+
+To inspect the IDM-VTON research provider path:
+
+```powershell
+$env:PYTHONPATH="src"
+$env:VPE_TRYON_PROVIDER="idm_vton"
+$env:IDM_VTON_REPO_PATH="C:\path\to\IDM-VTON"
+$env:IDM_VTON_MODEL_DIR="C:\path\to\idm-vton-weights"
+$env:IDM_VTON_NON_COMMERCIAL_ACK="true"
+python -m uvicorn vpe.serving.api:app --host 127.0.0.1 --port 8000
+```
+
+The current IDM-VTON provider is a scaffold. It intentionally fails at render
+time until the external runner is wired. See `docs/IDM_VTON_PROVIDER.md`.
 
 Keep the frontend in live mode:
 

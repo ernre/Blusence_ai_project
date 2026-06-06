@@ -38,6 +38,21 @@ export type HealthResponse = {
   ok: boolean;
 };
 
+export type TryOnProviderSummary = {
+  id: string;
+  label: string;
+  role: string;
+  status: string;
+  requires: string[];
+  notes: string;
+  active: boolean;
+};
+
+export type ProvidersResponse = {
+  activeProvider: string;
+  providers: TryOnProviderSummary[];
+};
+
 export type CatalogGarment = {
   id: string;
   name: string;

@@ -3,6 +3,7 @@ import type {
   CreateTryOnJobResponse,
   HealthResponse,
   JobsResponse,
+  ProvidersResponse,
   TryOnJobResult,
   TryOnJobSummary,
 } from "@/lib/types";
@@ -95,4 +96,39 @@ export async function mockGetJobs(): Promise<JobsResponse> {
 
 export async function mockHealth(): Promise<HealthResponse> {
   return { ok: true };
+}
+
+export async function mockGetProviders(): Promise<ProvidersResponse> {
+  return {
+    activeProvider: "local",
+    providers: [
+      {
+        id: "local",
+        label: "Local preview compositor",
+        role: "product-preview",
+        status: "available",
+        requires: [],
+        notes: "Offline renderer for product flow validation.",
+        active: true,
+      },
+      {
+        id: "fashn",
+        label: "FASHN.ai benchmark",
+        role: "external-benchmark",
+        status: "requires-api-key",
+        requires: ["FASHN_API_KEY"],
+        notes: "External baseline for launch acceleration and side-by-side quality comparison.",
+        active: false,
+      },
+      {
+        id: "idm_vton",
+        label: "IDM-VTON research baseline",
+        role: "open-source-research",
+        status: "scaffolded",
+        requires: ["IDM_VTON_REPO_PATH", "IDM_VTON_MODEL_DIR", "CUDA GPU"],
+        notes: "Research provider path kept separate from proprietary VPE ownership.",
+        active: false,
+      },
+    ],
+  };
 }

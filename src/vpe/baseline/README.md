@@ -1,4 +1,5 @@
-# Baseline
+# Baseline Compatibility
 
-Adapters for external VTON baselines live here. The Fashn.ai adapter is isolated
-behind a small interface so benchmark calls never leak into training code.
+This package remains for compatibility with the original benchmark tests.
+Product serving now routes through `vpe.providers`, where FASHN.ai is registered
+as the `fashn` external-benchmark provider.

@@ -44,6 +44,21 @@ export const healthResponseSchema = z.object({
   ok: z.boolean(),
 });
 
+export const providersResponseSchema = z.object({
+  active_provider: z.string().min(1),
+  providers: z.array(
+    z.object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      role: z.string().min(1),
+      status: z.string().min(1),
+      requires: z.array(z.string()),
+      notes: z.string(),
+      active: z.boolean(),
+    }),
+  ),
+});
+
 export const catalogResponseSchema = z.object({
   garments: z.array(
     z.object({

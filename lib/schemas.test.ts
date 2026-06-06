@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { healthResponseSchema, jobsResponseSchema } from "@/lib/schemas";
+import { healthResponseSchema, jobsResponseSchema, providersResponseSchema } from "@/lib/schemas";
 
 describe("schemas", () => {
   it("parses health responses", () => {
@@ -21,5 +21,37 @@ describe("schemas", () => {
         ],
       }),
     ).toThrow();
+  });
+
+  it("parses provider responses", () => {
+    expect(
+      providersResponseSchema.parse({
+        active_provider: "idm_vton",
+        providers: [
+          {
+            id: "idm_vton",
+            label: "IDM-VTON research baseline",
+            role: "open-source-research",
+            status: "scaffolded",
+            requires: ["CUDA GPU"],
+            notes: "Research provider path.",
+            active: true,
+          },
+        ],
+      }),
+    ).toEqual({
+      active_provider: "idm_vton",
+      providers: [
+        {
+          id: "idm_vton",
+          label: "IDM-VTON research baseline",
+          role: "open-source-research",
+          status: "scaffolded",
+          requires: ["CUDA GPU"],
+          notes: "Research provider path.",
+          active: true,
+        },
+      ],
+    });
   });
 });

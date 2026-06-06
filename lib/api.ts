@@ -3,6 +3,7 @@ import {
   createTryOnJobResponseSchema,
   healthResponseSchema,
   jobsResponseSchema,
+  providersResponseSchema,
   tryOnJobResultSchema,
 } from "@/lib/schemas";
 import type {
@@ -12,9 +13,16 @@ import type {
   CreateTryOnJobResponse,
   HealthResponse,
   JobsResponse,
+  ProvidersResponse,
   TryOnJobResult,
 } from "@/lib/types";
-import { mockCreateJob, mockGetJob, mockGetJobs, mockHealth } from "@/lib/mock/job-store";
+import {
+  mockCreateJob,
+  mockGetJob,
+  mockGetJobs,
+  mockGetProviders,
+  mockHealth,
+} from "@/lib/mock/job-store";
 
 const defaultBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 const useMock = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
@@ -92,6 +100,32 @@ function toCatalogResponse(payload: {
   };
 }
 
+function toProvidersResponse(payload: {
+  active_provider: string;
+  providers: {
+    id: string;
+    label: string;
+    role: string;
+    status: string;
+    requires: string[];
+    notes: string;
+    active: boolean;
+  }[];
+}): ProvidersResponse {
+  return {
+    activeProvider: payload.active_provider,
+    providers: payload.providers.map((provider) => ({
+      id: provider.id,
+      label: provider.label,
+      role: provider.role,
+      status: provider.status,
+      requires: provider.requires,
+      notes: provider.notes,
+      active: provider.active,
+    })),
+  };
+}
+
 async function assertOk(response: Response) {
   if (!response.ok) {
     const message = await response.text();
@@ -149,6 +183,16 @@ export async function getHealth(): Promise<HealthResponse> {
   const response = await fetch(`${normalizeBaseUrl(apiConfig.baseUrl)}/healthz`);
   await assertOk(response);
   return healthResponseSchema.parse(await response.json());
+}
+
+export async function getProviders(): Promise<ProvidersResponse> {
+  if (apiConfig.mode === "mock") {
+    return mockGetProviders();
+  }
+  const response = await fetch(`${normalizeBaseUrl(apiConfig.baseUrl)}/v1/providers`);
+  await assertOk(response);
+  const payload = providersResponseSchema.parse(await response.json());
+  return toProvidersResponse(payload);
 }
 
 export async function getCatalogGarments(): Promise<CatalogResponse> {
