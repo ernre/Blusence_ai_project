@@ -70,6 +70,26 @@ uvicorn vpe.serving.api:app --app-dir src --host 0.0.0.0 --port 8000
 - Real SDXL/Diffusers, DensePose/DWPose, PEFT, and TensorRT integrations should
   implement the interfaces already present in `src/vpe/core`.
 
+## FASHN AI Integration
+
+The backend can use FASHN AI as the live try-on provider by setting:
+
+```powershell
+$env:VPE_TRYON_PROVIDER="fashn"
+$env:FASHN_API_KEY="..."
+$env:FASHN_API_URL="https://api.fashn.ai"
+$env:FASHN_MODEL_NAME="tryon-v1.6"
+```
+
+The adapter follows FASHN's universal API pattern: `POST /v1/run` with
+`model_name` and `inputs`, then `GET /v1/status/{id}` until `completed`.
+Local uploads are sent as `data:image/...;base64,...` strings, so the browser
+does not need to expose public image URLs.
+
+For broader item support such as shoes and accessories, set
+`FASHN_MODEL_NAME=tryon-max`; for low-latency clothing try-on, keep the default
+`tryon-v1.6`.
+
 ## Frontend App
 
 VPE-1.0 also includes a frontend-only Next.js App Router web app for the try-on

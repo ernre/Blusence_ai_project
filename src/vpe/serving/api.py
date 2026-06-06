@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
@@ -13,8 +14,9 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from pydantic import BaseModel
 
+from vpe.baseline import FashnBaselineVTON, FashnConfig
 from vpe.core import VPEngine
-from vpe.types import TryOnRequest
+from vpe.types import TryOnRequest, TryOnResult
 
 
 class JobResponse(BaseModel):
@@ -116,17 +118,18 @@ async def create_tryon(
         job_summaries[job_id].status = "running"
 
         started = perf_counter()
-        result = engine.render(
+        result = _render_tryon(
             TryOnRequest(
                 person_image=person_paths[0],
                 garment_image=garment_path,
                 mask_image=mask_path,
                 person_views=tuple(person_paths[1:]),
+                category=category,
                 brand_id=brand_id,
             )
         )
         latency_ms = int((perf_counter() - started) * 1000)
-        output_path = result_root / f"{job_id}.png"
+        output_path = result_root / f"{job_id}{result.image_path.suffix or '.png'}"
         result.image_path.replace(output_path)
         image_url = _artifact_url(request, output_path)
         jobs[job_id] = JobStatus(
@@ -161,6 +164,13 @@ def get_tryon_job(job_id: str) -> JobStatus:
 def list_jobs() -> JobsResponse:
     sorted_jobs = sorted(job_summaries.values(), key=lambda job: job.created_at, reverse=True)
     return JobsResponse(jobs=sorted_jobs)
+
+
+def _render_tryon(request: TryOnRequest) -> TryOnResult:
+    provider = os.getenv("VPE_TRYON_PROVIDER", "local").lower()
+    if provider == "fashn":
+        return FashnBaselineVTON(FashnConfig.from_env()).render(request)
+    return engine.render(request)
 
 
 async def _persist_upload(upload: UploadFile, job_id: str, stem: str) -> Path:

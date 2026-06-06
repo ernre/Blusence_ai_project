@@ -70,6 +70,24 @@ Set `FASHN_API_KEY` in `.env` before using `FashnBaselineVTON`. Baseline outputs
 are for benchmarking only and must not be used for training unless service terms
 explicitly allow it.
 
+To route frontend live try-on requests through FASHN instead of the local stub:
+
+```powershell
+$env:PYTHONPATH="src"
+$env:VPE_TRYON_PROVIDER="fashn"
+$env:FASHN_API_KEY="..."
+$env:FASHN_API_URL="https://api.fashn.ai"
+python -m uvicorn vpe.serving.api:app --host 127.0.0.1 --port 8000
+```
+
+Keep the frontend in live mode:
+
+```powershell
+$env:NEXT_PUBLIC_USE_MOCK="false"
+$env:NEXT_PUBLIC_API_BASE_URL="http://127.0.0.1:8000"
+pnpm dev
+```
+
 ## Production TODOs
 
 - Swap stub image conditioning with Diffusers SDXL/inpainting pipeline.

@@ -15,6 +15,7 @@ class TryOnRequest:
     mask_image: Path | None = None
     pose_image: Path | None = None
     person_views: tuple[Path, ...] = field(default_factory=tuple)
+    category: str | None = None
     brand_id: str | None = None
     seed: int | None = None
 
