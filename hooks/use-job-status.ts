@@ -8,13 +8,14 @@ export function useJobStatus(jobId: string) {
   return useQuery({
     queryKey: ["tryon-job", jobId],
     queryFn: () => getTryOnJob(jobId),
-    refetchInterval: ({ state }) => {
+    refetchInterval: (query) => {
+      const { state } = query;
       const status = state.data?.status;
       if (status === "done" || status === "error") {
         return false;
       }
-      const failures = state.failureCount;
-      return Math.min(5000, 700 * 2 ** failures);
+      const polls = Math.max(0, state.dataUpdateCount - 1);
+      return Math.min(5000, 700 * 2 ** polls);
     },
   });
 }

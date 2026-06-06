@@ -37,7 +37,7 @@ export function JobProgress({ status, error }: JobProgressProps) {
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2">
         {steps.map((step) => {
-          const activeIndex = steps.indexOf(status === "error" ? "queued" : status);
+          const activeIndex = steps.indexOf(status);
           const stepIndex = steps.indexOf(step);
           const complete = stepIndex <= activeIndex;
           return (

@@ -23,6 +23,7 @@ mlruns/
 *.safetensors
 *.ckpt
 node_modules/
+.tools/
 .next/
 out/
 coverage/
@@ -30,3 +31,4 @@ test-results/
 playwright-report/
 .env.local
 !.env.local.example
+tsconfig.tsbuildinfo
