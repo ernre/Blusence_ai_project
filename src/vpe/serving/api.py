@@ -8,7 +8,7 @@ from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
@@ -124,6 +124,7 @@ def metrics() -> dict[str, int]:
 
 @app.post("/v1/tryon", response_model=JobResponse, status_code=status.HTTP_202_ACCEPTED)
 async def create_tryon(
+    background_tasks: BackgroundTasks,
     request: Request,
     person: list[UploadFile] = File(...),
     garment: UploadFile = File(...),
@@ -147,46 +148,23 @@ async def create_tryon(
         created_at=created_at,
     )
 
-    try:
-        person_paths = [await _persist_upload(upload, job_id, f"person-{index}") for index, upload in enumerate(person)]
-        garment_path = await _persist_upload(garment, job_id, "garment")
-        mask_path = _create_full_mask(person_paths[0], job_id)
-        source_urls = [_artifact_url(request, path) for path in person_paths]
-        jobs[job_id] = JobStatus(status="running", source_images=source_urls)
-        job_summaries[job_id].status = "running"
-
-        started = perf_counter()
-        result = _render_tryon(
-            TryOnRequest(
-                person_image=person_paths[0],
-                garment_image=garment_path,
-                mask_image=mask_path,
-                person_views=tuple(person_paths[1:]),
-                category=category,
-                brand_id=brand_id,
-            )
-        )
-        latency_ms = int((perf_counter() - started) * 1000)
-        output_path = result_root / f"{job_id}{result.image_path.suffix or '.png'}"
-        result.image_path.replace(output_path)
-        image_url = _artifact_url(request, output_path)
-        jobs[job_id] = JobStatus(
-            status="done",
-            images=[image_url],
-            source_images=source_urls,
-            latency_ms=latency_ms,
-        )
-        job_summaries[job_id] = JobSummary(
-            id=job_id,
-            status="done",
-            thumbnail_url=image_url,
-            latency_ms=latency_ms,
-            created_at=created_at,
-        )
-    except Exception as exc:
-        jobs[job_id] = JobStatus(status="error", error=str(exc))
-        job_summaries[job_id].status = "error"
-        job_summaries[job_id].thumbnail_url = source_urls[0] if "source_urls" in locals() and source_urls else ""
+    person_paths = [await _persist_upload(upload, job_id, f"person-{index}") for index, upload in enumerate(person)]
+    garment_path = await _persist_upload(garment, job_id, "garment")
+    mask_path = _create_full_mask(person_paths[0], job_id)
+    source_urls = [_artifact_url(request, path) for path in person_paths]
+    jobs[job_id] = JobStatus(status="queued", source_images=source_urls)
+    background_tasks.add_task(
+        _process_tryon_job,
+        job_id,
+        created_at,
+        str(request.base_url).rstrip("/"),
+        person_paths,
+        garment_path,
+        mask_path,
+        source_urls,
+        category,
+        brand_id,
+    )
     return JobResponse(job_id=job_id)
 
 
@@ -236,6 +214,54 @@ def _render_tryon(request: TryOnRequest) -> TryOnResult:
     return _active_provider().render(request)
 
 
+def _process_tryon_job(
+    job_id: str,
+    created_at: str,
+    base_url: str,
+    person_paths: list[Path],
+    garment_path: Path,
+    mask_path: Path,
+    source_urls: list[str],
+    category: str,
+    brand_id: str | None,
+) -> None:
+    jobs[job_id] = JobStatus(status="running", source_images=source_urls)
+    job_summaries[job_id].status = "running"
+    try:
+        started = perf_counter()
+        result = _render_tryon(
+            TryOnRequest(
+                person_image=person_paths[0],
+                garment_image=garment_path,
+                mask_image=mask_path,
+                person_views=tuple(person_paths[1:]),
+                category=category,
+                brand_id=brand_id,
+            )
+        )
+        latency_ms = int((perf_counter() - started) * 1000)
+        output_path = result_root / f"{job_id}{result.image_path.suffix or '.png'}"
+        result.image_path.replace(output_path)
+        image_url = _artifact_url_from_base(base_url, output_path)
+        jobs[job_id] = JobStatus(
+            status="done",
+            images=[image_url],
+            source_images=source_urls,
+            latency_ms=latency_ms,
+        )
+        job_summaries[job_id] = JobSummary(
+            id=job_id,
+            status="done",
+            thumbnail_url=image_url,
+            latency_ms=latency_ms,
+            created_at=created_at,
+        )
+    except Exception as exc:
+        jobs[job_id] = JobStatus(status="error", source_images=source_urls, error=str(exc))
+        job_summaries[job_id].status = "error"
+        job_summaries[job_id].thumbnail_url = source_urls[0] if source_urls else ""
+
+
 def _active_provider() -> TryOnProvider:
     provider_id = active_provider_id()
     if provider_id not in provider_cache:
@@ -267,8 +293,12 @@ def _create_full_mask(person_image: Path, job_id: str) -> Path:
 
 
 def _artifact_url(request: Request, path: Path) -> str:
+    return _artifact_url_from_base(str(request.base_url).rstrip("/"), path)
+
+
+def _artifact_url_from_base(base_url: str, path: Path) -> str:
     relative = path.relative_to(serving_root).as_posix()
-    return str(request.base_url).rstrip("/") + f"/artifacts/{relative}"
+    return f"{base_url}/artifacts/{relative}"
 
 
 def _load_catalog(request: Request) -> list[CatalogGarment]:

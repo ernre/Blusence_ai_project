@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, Loader2, Wand2 } from "lucide-react";
+import { ChevronDown, Cpu, Loader2, Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Uploader } from "@/components/uploader";
 import { useCreateJob } from "@/hooks/use-create-job";
+import { useProviders } from "@/hooks/use-providers";
 import { tryOnFormSchema, type TryOnFormValues } from "@/lib/schemas";
 import type { GarmentCategory } from "@/lib/types";
 
@@ -29,8 +30,10 @@ const categories: { value: GarmentCategory; label: string }[] = [
 export function TryOnStudio() {
   const router = useRouter();
   const createJob = useCreateJob();
+  const providers = useProviders();
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [pickedGarmentId, setPickedGarmentId] = useState<string | null>(null);
+  const activeProvider = providers.data?.providers.find((provider) => provider.active);
   const form = useForm<TryOnFormValues>({
     resolver: zodResolver(tryOnFormSchema),
     defaultValues: {
@@ -82,6 +85,20 @@ export function TryOnStudio() {
         />
       </div>
       <aside className="grid content-start gap-5">
+        <div className="grid gap-2 rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Cpu className="h-4 w-4 text-primary" aria-hidden="true" />
+            Provider
+          </div>
+          <p className="text-sm">{activeProvider?.label ?? providers.data?.activeProvider ?? "Checking provider..."}</p>
+          <p className="text-xs text-muted-foreground">
+            {activeProvider?.id === "local"
+              ? "Preview only"
+              : activeProvider?.id === "idm_vton"
+                ? "Hosted model"
+                : activeProvider?.status ?? ""}
+          </p>
+        </div>
         <div className="rounded-lg border bg-card p-4">
           <GarmentPicker
             selectedId={pickedGarmentId}
