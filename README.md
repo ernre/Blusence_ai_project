@@ -4,6 +4,10 @@ VPE-1.0 is a provider-oriented virtual try-on monorepo. It keeps the product
 surface stable while different generation backends can be selected for local
 preview, external benchmarking, or self-hosted research.
 
+For internship or portfolio review, start with `INTERNSHIP_README.md`. It gives
+the honest status of what runs today, what is placeholder, and how the project
+maps to the proprietary VTON goal.
+
 The current implementation is production-shaped and CPU-runnable: heavyweight
 diffusion, pose, PEFT, and TensorRT paths are isolated behind explicit providers
 and optional dependencies so the repository can test end-to-end without
