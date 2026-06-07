@@ -92,19 +92,18 @@ $env:FASHN_API_URL="https://api.fashn.ai"
 python -m uvicorn vpe.serving.api:app --host 127.0.0.1 --port 8000
 ```
 
-To inspect the IDM-VTON research provider path:
+To run the hosted IDM-VTON research provider:
 
 ```powershell
 $env:PYTHONPATH="src"
 $env:VPE_TRYON_PROVIDER="idm_vton"
-$env:IDM_VTON_REPO_PATH="C:\path\to\IDM-VTON"
-$env:IDM_VTON_MODEL_DIR="C:\path\to\idm-vton-weights"
 $env:IDM_VTON_NON_COMMERCIAL_ACK="true"
+$env:IDM_VTON_HF_TOKEN="hf_..." # optional, recommended for ZeroGPU quota
 python -m uvicorn vpe.serving.api:app --host 127.0.0.1 --port 8000
 ```
 
-The current IDM-VTON provider is a scaffold. It intentionally fails at render
-time until the external runner is wired. See `docs/IDM_VTON_PROVIDER.md`.
+If Hugging Face returns a ZeroGPU quota error, set a Hugging Face token with
+available quota. See `docs/IDM_VTON_PROVIDER.md`.
 
 Keep the frontend in live mode:
 

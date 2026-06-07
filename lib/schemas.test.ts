@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { healthResponseSchema, jobsResponseSchema, providersResponseSchema } from "@/lib/schemas";
+import {
+  healthResponseSchema,
+  jobsResponseSchema,
+  providersResponseSchema,
+  tryOnJobResultSchema,
+} from "@/lib/schemas";
 
 describe("schemas", () => {
   it("parses health responses", () => {
@@ -21,6 +26,24 @@ describe("schemas", () => {
         ],
       }),
     ).toThrow();
+  });
+
+  it("parses nullable backend job fields", () => {
+    expect(
+      tryOnJobResultSchema.parse({
+        status: "running",
+        images: null,
+        source_images: null,
+        latency_ms: null,
+        error: null,
+      }),
+    ).toEqual({
+      status: "running",
+      images: null,
+      source_images: null,
+      latency_ms: null,
+      error: null,
+    });
   });
 
   it("parses provider responses", () => {

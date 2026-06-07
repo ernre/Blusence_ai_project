@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import pytest
 from PIL import Image
@@ -48,8 +49,60 @@ def test_idm_vton_requires_license_acknowledgement(tmp_path: Path) -> None:
     person = _image(tmp_path / "person.png", "white")
     garment = _image(tmp_path / "garment.png", "red")
     provider = IDMVTONResearchProvider(
-        IDMVTONConfig(repo_path=tmp_path, model_dir=tmp_path, non_commercial_acknowledged=False)
+        IDMVTONConfig(output_dir=tmp_path, non_commercial_acknowledged=False)
     )
 
     with pytest.raises(ProviderUnavailableError, match="CC BY-NC-SA"):
         provider.render(TryOnRequest(person_image=person, garment_image=garment))
+
+
+class _FakeIDMVTONJob:
+    def __init__(self, output: Path) -> None:
+        self._output = output
+
+    def result(self, timeout: float | None = None) -> tuple[str, str]:
+        return (str(self._output), str(self._output))
+
+
+class _FakeIDMVTONClient:
+    def __init__(self, output: Path) -> None:
+        self.output = output
+        self.calls: list[tuple[tuple[Any, ...], str]] = []
+
+    def submit(self, *args: object, api_name: str) -> _FakeIDMVTONJob:
+        self.calls.append((args, api_name))
+        return _FakeIDMVTONJob(self.output)
+
+
+def test_idm_vton_provider_submits_space_payload_and_copies_output(tmp_path: Path) -> None:
+    person = _image(tmp_path / "person.png", "white")
+    garment = _image(tmp_path / "garment.png", "red")
+    hosted_output = _image(tmp_path / "hosted-output.png", "blue")
+    client = _FakeIDMVTONClient(hosted_output)
+    provider = IDMVTONResearchProvider(
+        IDMVTONConfig(
+            output_dir=tmp_path / "results",
+            non_commercial_acknowledged=True,
+            garment_description="red shirt",
+            denoise_steps=20,
+            seed=123,
+            timeout_seconds=1,
+        ),
+        client=client,
+    )
+
+    result = provider.render(TryOnRequest(person_image=person, garment_image=garment, category="tops"))
+
+    assert result.image_path.exists()
+    assert result.image_path.parent == tmp_path / "results"
+    assert result.metadata["provider_id"] == "idm_vton"
+    assert result.metadata["space_id"] == "yisol/IDM-VTON"
+    args, api_name = client.calls[0]
+    assert api_name == "/tryon"
+    assert args[0]["background"]["orig_name"] == "person.png"
+    assert args[1]["orig_name"] == "garment.png"
+    assert args[2] == "red shirt"
+    assert args[3] is True
+    assert args[4] is False
+    assert args[5] == 20
+    assert args[6] == 123

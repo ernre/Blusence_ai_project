@@ -9,6 +9,7 @@ description = "VPE-1.0 VTON-Prime Engine production scaffold"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.111",
+  "gradio-client>=0.17,<1",
   "httpx>=0.27",
   "numpy>=1.26",
   "omegaconf>=2.3",

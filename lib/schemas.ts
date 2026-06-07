@@ -22,10 +22,10 @@ export const createTryOnJobResponseSchema = z.object({
 
 export const tryOnJobResultSchema = z.object({
   status: jobStatusSchema,
-  images: z.array(z.string().min(1)).optional(),
-  source_images: z.array(z.string().min(1)).optional(),
-  latency_ms: z.number().int().nonnegative().optional(),
-  error: z.string().optional(),
+  images: z.array(z.string().min(1)).nullable().optional(),
+  source_images: z.array(z.string().min(1)).nullable().optional(),
+  latency_ms: z.number().int().nonnegative().nullable().optional(),
+  error: z.string().nullable().optional(),
 });
 
 export const jobsResponseSchema = z.object({

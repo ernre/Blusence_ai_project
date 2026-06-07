@@ -52,5 +52,5 @@ def build_tryon_provider(provider_id: str, output_dir: Path, image_size: int = 2
     if normalized == "fashn":
         return FashnBenchmarkProvider(FashnConfig.from_env())
     if normalized == "idm_vton":
-        return IDMVTONResearchProvider(IDMVTONConfig.from_env())
+        return IDMVTONResearchProvider(IDMVTONConfig.from_env(output_dir=output_dir))
     raise ProviderUnavailableError(f"Unknown VPE_TRYON_PROVIDER: {provider_id}")

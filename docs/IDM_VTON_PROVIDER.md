@@ -4,8 +4,9 @@
 
 IDM-VTON is the right open-source reference point for the next technical phase:
 real diffusion-based virtual try-on using person images, garment images, masks,
-pose conditioning, and garment feature injection. In this project it should be
-treated as a research/self-hosted provider, not as proprietary VPE IP.
+pose conditioning, and garment feature injection. In this project it is wired as
+a hosted Hugging Face Space provider and should be treated as research baseline,
+not proprietary VPE IP.
 
 ## Boundary
 
@@ -31,7 +32,7 @@ The monorepo now exposes three provider roles:
 ```text
 local    -> product preview and smoke tests
 fashn    -> external paid benchmark / launch accelerator
-idm_vton -> open-source research baseline / self-hosted model path
+idm_vton -> open-source research baseline / hosted Hugging Face Space path
 ```
 
 The serving API keeps the same product contract:
@@ -45,34 +46,45 @@ GET  /v1/providers
 That lets the frontend and catalog flow stay stable while generation backends
 change behind the provider registry.
 
-## Setup Target
+## Current Hosted Setup
 
-The future runnable IDM-VTON adapter should:
+The current adapter calls the public Space:
 
-1. Load IDM-VTON once per worker process.
-2. Accept the existing `TryOnRequest`.
-3. Run human parsing, OpenPose, DensePose, and mask preparation.
-4. Execute IDM-VTON inference with the uploaded person and garment images.
-5. Write the result into `outputs/serving/results`.
-6. Return a normal `TryOnResult` with provider metadata.
+```text
+https://huggingface.co/spaces/yisol/IDM-VTON
+```
+
+The Space exposes:
+
+```text
+predict(dict, garm_img, garment_des, is_checked, is_checked_crop, denoise_steps, seed, api_name="/tryon")
+```
+
+The provider accepts the existing `TryOnRequest`, sends the person and garment
+images to the Space, copies the returned image into `outputs/serving/results`,
+and returns a normal `TryOnResult`.
 
 ## Environment
 
 ```powershell
 $env:VPE_TRYON_PROVIDER="idm_vton"
-$env:IDM_VTON_REPO_PATH="C:\path\to\IDM-VTON"
-$env:IDM_VTON_MODEL_DIR="C:\path\to\idm-vton-weights"
-$env:IDM_VTON_DEVICE="cuda"
 $env:IDM_VTON_NON_COMMERCIAL_ACK="true"
+$env:IDM_VTON_SPACE_ID="yisol/IDM-VTON"
+$env:IDM_VTON_HF_TOKEN="hf_..." # optional, but recommended for ZeroGPU quota
+$env:IDM_VTON_DENOISE_STEPS="20"
 ```
 
 `IDM_VTON_NON_COMMERCIAL_ACK=true` is intentionally explicit. It should only be
 set after the license boundary is understood.
 
-## Next Implementation Step
+If Hugging Face returns a ZeroGPU quota error, create a token at
+`https://huggingface.co/settings/tokens` and set `IDM_VTON_HF_TOKEN`,
+`HF_TOKEN`, or `HUGGINGFACE_TOKEN`.
 
-Create an external runner wrapper instead of copying the upstream repository
-into this project. The safest path is:
+## Future Self-Hosted Step
+
+For production control, create a self-hosted runner instead of depending on the
+public Space:
 
 - keep IDM-VTON in a separate checkout;
 - create a small Python runner that imports its inference pipeline;

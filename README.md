@@ -82,7 +82,7 @@ The backend selects the active try-on provider with `VPE_TRYON_PROVIDER`:
 ```text
 local    product preview and smoke tests
 fashn    FASHN.ai external benchmark / launch accelerator
-idm_vton IDM-VTON open-source research baseline scaffold
+idm_vton IDM-VTON hosted Hugging Face Space research baseline
 ```
 
 Inspect the registry while the backend is running:
@@ -115,11 +115,11 @@ For broader item support such as shoes and accessories, set
 
 ## IDM-VTON Research Path
 
-IDM-VTON is registered as `VPE_TRYON_PROVIDER=idm_vton` so the project can grow
-toward a real self-hosted model engine without changing the frontend/backend
-contract. The current provider is a scaffold with explicit setup and licensing
-checks. Wire an external IDM-VTON runner after GPU, checkpoint, and license
-constraints are confirmed.
+IDM-VTON is registered as `VPE_TRYON_PROVIDER=idm_vton` so the project can run a
+real research VTON model without changing the frontend/backend contract. The
+current provider calls the hosted Hugging Face Space at `yisol/IDM-VTON`.
+Set `IDM_VTON_NON_COMMERCIAL_ACK=true` after reviewing the license boundary, and
+set `IDM_VTON_HF_TOKEN` or `HF_TOKEN` when public ZeroGPU quota is exhausted.
 
 See `docs/IDM_VTON_PROVIDER.md` for the implementation plan.
 
@@ -174,5 +174,5 @@ blue-jacket,Blue Jacket,Acme,outerwear,images/blue-jacket.jpg,,https://example.c
 
 Use `image_path` for local catalog files or `image_url` for public product images.
 The local preview provider still produces a placeholder try-on. Real generation
-requires either `VPE_TRYON_PROVIDER=fashn` plus a valid `FASHN_API_KEY`, or a
-future wired `VPE_TRYON_PROVIDER=idm_vton` runner with GPU/checkpoints.
+requires either `VPE_TRYON_PROVIDER=fashn` plus a valid `FASHN_API_KEY`, or
+`VPE_TRYON_PROVIDER=idm_vton` plus Hugging Face Space quota.

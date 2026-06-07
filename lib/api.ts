@@ -42,17 +42,17 @@ function toJobIdResponse(payload: { job_id: string }): CreateTryOnJobResponse {
 
 function toJobResult(payload: {
   status: TryOnJobResult["status"];
-  images?: string[];
-  source_images?: string[];
-  latency_ms?: number;
-  error?: string;
+  images?: string[] | null;
+  source_images?: string[] | null;
+  latency_ms?: number | null;
+  error?: string | null;
 }): TryOnJobResult {
   return {
     status: payload.status,
-    images: payload.images,
-    sourceImages: payload.source_images,
-    latencyMs: payload.latency_ms,
-    error: payload.error,
+    images: payload.images ?? undefined,
+    sourceImages: payload.source_images ?? undefined,
+    latencyMs: payload.latency_ms ?? undefined,
+    error: payload.error ?? undefined,
   };
 }
 
